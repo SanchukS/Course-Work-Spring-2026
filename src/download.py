@@ -1,18 +1,19 @@
 import os
 import zipfile
 import kaggle
+from pathlib import Path
 
 
-def download_and_extract_data(path: str):
+def download_and_extract_data(path: Path):
     """
     Проверяет наличие нужных файлов, если их нет - скачивает датасет с Kaggle и распаковывает.
     """
     # 1. Определяем переменные
     dataset_slug = 'frtgnn/dunnhumby-the-complete-journey'
     zip_file_name = 'dunnhumby-the-complete-journey.zip'
-    zip_file_path = path + "/" + zip_file_name
+    zip_file_path = path / zip_file_name
     files_to_check = ['transaction_data.csv', 'product.csv']
-    paths_to_check = [path + "/" + file_name for file_name in files_to_check]
+    paths_to_check = [path / file_name for file_name in files_to_check]
 
     # 2. Проверяем, есть ли уже нужные файлы
     all_files_exist = all(os.path.exists(f) for f in paths_to_check)
