@@ -3,7 +3,6 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Игнорировать большие файлы данных
-data/
 *.csv
 *.zip
 
