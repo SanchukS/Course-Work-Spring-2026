@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import numpy.typing as npt
+from typing import cast
+
 
 def extract_features(history_df: pd.DataFrame, window_size: int = 3) -> dict[str, float]:
     """
@@ -17,9 +20,10 @@ def extract_features(history_df: pd.DataFrame, window_size: int = 3) -> dict[str
     
     # Вычисляем массив всех исторических интервалов в переданном окне
     if current_idx > 1:
-        intervals = history_df['DAY'].diff().dropna().values
+        intervals = history_df['DAY'].diff().dropna().values.astype(float)
+        intervals = cast(npt.NDArray[np.float64], intervals)
     else:
-        intervals = np.array([])
+        intervals = np.array([], dtype=float)
 
     # 2. Лаговые признаки (WINDOW_SIZE)
     for i in range(window_size):
@@ -44,8 +48,8 @@ def extract_features(history_df: pd.DataFrame, window_size: int = 3) -> dict[str
 
     # 3. Агрегации и скользящие средние (по всей доступной истории)
     if len(intervals) > 0:
-        features['mean_interval'] = np.mean(intervals)
-        features['std_interval'] = np.std(intervals) if len(intervals) > 1 else -1
+        features['mean_interval'] = intervals.mean()
+        features['std_interval'] = intervals.std() if len(intervals) > 1 else -1.0
         features['ema_interval'] = pd.Series(intervals).ewm(alpha=0.5, adjust=False).mean().iloc[-1]
     else:
         features['mean_interval'] = -1
