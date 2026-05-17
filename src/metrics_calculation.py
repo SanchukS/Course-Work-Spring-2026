@@ -8,55 +8,70 @@ class RegressorModel(Protocol):
 
 def calculate_metrics(model: RegressorModel, X_test: pd.DataFrame, y_test: pd.Series, window_size: int = 3) -> dict[str, float]:
     """
-    Рассчитывает метрики MAE и MASE для всей выборки, а также отдельно для Cold Start и Warm State.
+    Рассчитывает метрики MAE, MASE и MAPE для overall, cold_start и warm_state,
+    включая разбивку каждого из этих состояний на когорты по длине интервала (Fast, Medium, Long).
     """
     # 1. Получаем предсказания модели
     y_pred = model.predict(X_test)
     
-    # 2. Разделяем индексы на Cold Start (прогрев окна) и Warm State (полные данные)
+    # 2. Базовые маски (Cold Start и Warm State)
     cold_idx = X_test['session_step'] <= window_size
     warm_idx = ~cold_idx
     
-    # 3. Рассчитываем знаменатели для MASE (Ошибка наивного прогноза)
-    # Наивный прогноз = последний известный интервал (interval_lag_1). Он всегда существует.
-    naive_mae_denominator = mean_absolute_error(y_test, X_test['interval_lag_1'])
+    # 3. Маски для когорт по длине интервала
+    fast_idx = y_test <= 7
+    medium_idx = (y_test > 7) & (y_test <= 21)
+    long_idx = y_test > 21
     
-    if cold_idx.sum() > 0:
-        cold_naive_mae_denominator = mean_absolute_error(y_test[cold_idx], X_test.loc[cold_idx, 'interval_lag_1'])
-    else:
-        cold_naive_mae_denominator = 1e-6
+    # 4. Вспомогательная функция для расчета метрик по любому срезу
+    def get_slice_metrics(mask, prefix: str) -> dict[str, float]:
+        if mask is None:
+            y_t = y_test
+            y_p = y_pred
+            x_naive = np.array(X_test['interval_lag_1'])
+        else:
+            # Защита: если в данном срезе нет наблюдений
+            if mask.sum() == 0:
+                return {f'{prefix}_mae': np.nan, f'{prefix}_mase': np.nan, f'{prefix}_mape': np.nan}
+            
+            y_t = y_test[mask]
+            # .values нужен, чтобы безопасно фильтровать numpy array с помощью pandas Series маски
+            y_p = y_pred[mask.values] if isinstance(y_pred, np.ndarray) else y_pred[mask]
+            x_naive = np.array(X_test.loc[mask, 'interval_lag_1'])
+            
+        # -- MAE --
+        mae = mean_absolute_error(y_t, y_p)
         
-    if warm_idx.sum() > 0:
-        warm_naive_mae_denominator = mean_absolute_error(y_test[warm_idx], X_test.loc[warm_idx, 'interval_lag_1'])
-    else:
-        warm_naive_mae_denominator = 1e-6
+        # -- MASE --
+        naive_mae = mean_absolute_error(y_t, x_naive)
+        naive_mae = max(naive_mae, 1e-6)  # Защита от деления на ноль
+        mase = mae / naive_mae
         
-    # Защита от деления на ноль
-    naive_mae_denominator = max(naive_mae_denominator, 1e-6)
-    cold_naive_mae_denominator = max(cold_naive_mae_denominator, 1e-6)
-    warm_naive_mae_denominator = max(warm_naive_mae_denominator, 1e-6)
+        # -- MAPE --
+        # np.maximum используется для защиты от деления на 0, если y_test = 0
+        mape = np.mean(np.abs((y_t - y_p) / np.maximum(y_t, 1e-6)))
         
-    # 4. Собираем итоговый словарь с метриками
+        return {f'{prefix}_mae': mae, f'{prefix}_mase': mase, f'{prefix}_mape': mape}
+
+    # 5. Собираем итоговый словарь с пересечениями масок
     metrics = {}
     
-    # -- Overall --
-    metrics['overall_mae'] = mean_absolute_error(y_test, y_pred)
-    metrics['overall_mase'] = metrics['overall_mae'] / naive_mae_denominator
+    # --- OVERALL (всё вместе + 3 когорты) ---
+    metrics.update(get_slice_metrics(None, 'overall'))
+    metrics.update(get_slice_metrics(fast_idx, 'overall_fast'))
+    metrics.update(get_slice_metrics(medium_idx, 'overall_medium'))
+    metrics.update(get_slice_metrics(long_idx, 'overall_long'))
     
-    # -- Cold Start --
-    if cold_idx.sum() > 0:
-        metrics['cold_start_mae'] = mean_absolute_error(y_test[cold_idx], y_pred[cold_idx])
-        metrics['cold_start_mase'] = metrics['cold_start_mae'] / cold_naive_mae_denominator
-    else:
-        metrics['cold_start_mae'] = np.nan
-        metrics['cold_start_mase'] = np.nan
-        
-    # -- Warm State --
-    if warm_idx.sum() > 0:
-        metrics['warm_state_mae'] = mean_absolute_error(y_test[warm_idx], y_pred[warm_idx])
-        metrics['warm_state_mase'] = metrics['warm_state_mae'] / warm_naive_mae_denominator
-    else:
-        metrics['warm_state_mae'] = np.nan
-        metrics['warm_state_mase'] = np.nan
+    # --- COLD START (всё вместе + 3 когорты) ---
+    metrics.update(get_slice_metrics(cold_idx, 'cold_start'))
+    metrics.update(get_slice_metrics(cold_idx & fast_idx, 'cold_start_fast'))
+    metrics.update(get_slice_metrics(cold_idx & medium_idx, 'cold_start_medium'))
+    metrics.update(get_slice_metrics(cold_idx & long_idx, 'cold_start_long'))
+    
+    # --- WARM STATE (всё вместе + 3 когорты) ---
+    metrics.update(get_slice_metrics(warm_idx, 'warm_state'))
+    metrics.update(get_slice_metrics(warm_idx & fast_idx, 'warm_state_fast'))
+    metrics.update(get_slice_metrics(warm_idx & medium_idx, 'warm_state_medium'))
+    metrics.update(get_slice_metrics(warm_idx & long_idx, 'warm_state_long'))
         
     return metrics
