@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from src.features_extraction import extract_features
 
 def build_dataset_from_session(session_df: pd.DataFrame, window_size: int = 3) -> tuple[list[dict[str, float]], list[int]]:
@@ -34,10 +35,21 @@ def build_dataset(outflow_data: pd.DataFrame, window_size: int = 3) -> tuple[pd.
 
     X, y = [], []
 
-    for name, session_df in grouped_sessions:
-        X_session, y_session = build_dataset_from_session(session_df, window_size)
-        X.extend(X_session)
-        y.extend(y_session)
+    for name, session_df in tqdm(
+        grouped_sessions, 
+        desc="Building dataset",
+        unit="session",
+        ncols=100,
+        colour="green",
+        leave=True
+    ):
+        try:
+            X_session, y_session = build_dataset_from_session(session_df, window_size)
+            X.extend(X_session)
+            y.extend(y_session)
+        except Exception as e:
+            tqdm.write(f"Error processing {name}: {e}")
+            continue
 
     X_result = pd.DataFrame(X)
     y_result = pd.Series(y)
