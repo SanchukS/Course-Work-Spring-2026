@@ -22,8 +22,11 @@ def build_multiple_datasets(
     np.random.seed(random_state)
 
     groups = outflow_data.groupby(["TOTAL CATEGORY", "household_key", "SESSION_ID"])
-    sessions_indexes = list(groups.indices.values())
-    np.random.shuffle(sessions_indexes)
+    all_sessions = list(groups.indices.values())
+
+    shuffled_idexes = np.random.permutation(len(all_sessions))
+    sessions_indexes = [all_sessions[i] for i in shuffled_idexes]
+    
     len_ = len(sessions_indexes)
 
     datasets = []
