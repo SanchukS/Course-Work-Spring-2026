@@ -15,7 +15,7 @@ def build_multiple_datasets(
     ) -> list[tuple[pd.DataFrame, pd.Series]]:
     """
     Разбивает исходные данные на N частей по сессиям в соответствии с указанными пропорциями и из каждой части создаёт датасет.
-    outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'SESSION_ID', 'DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
+    outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'SESSION_ID', 'DAY', 'QUANTITY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
     datasets_proportions: Список положительных вещественных чисел суммирующихся в 1.0. Каждое число - доля объектов в соответствующем датасете. 
     """
     assert isclose(sum(datasets_proportions), 1), "Proportions must summrize to 1.0"
