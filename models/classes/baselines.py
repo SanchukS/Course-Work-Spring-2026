@@ -13,5 +13,5 @@ class MeanIntervalBaselineModel:
 
 class EmaIntervalBaselineModel:
     """Бейзлайн 3: Экспоненциальное скользящее среднее (EMA) по интервалам"""
-def predict(self, X: pd.DataFrame) -> np.ndarray:
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
         return np.array(X['ema_interval'])
