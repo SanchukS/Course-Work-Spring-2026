@@ -3,72 +3,63 @@ import pandas as pd
 import numpy.typing as npt
 from typing import cast
 
-
 def extract_features(history_df: pd.DataFrame, window_size: int = 3) -> dict[str, float]:
     """
     Генерирует фичи для текущего момента времени на основе прошлой истории.
-    history_df: DataFrame с колонками ['DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
-                Самая последняя строка - это текущая покупка.
+    history_df: DataFrame с колонками ['DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT'].
+                Длина history_df гарантированно >= 2. Самая последняя строка - текущая покупка.
     """
     features = {}
     current_idx = len(history_df)
     
-    # 1. Признаки текущего состояния
+    # 1. Признаки текущего состояния (текущая транзакция)
     current_row = history_df.iloc[-1]
-    features['day_of_week'] = current_row['DAY'] % 7
-    features['session_step'] = current_idx
+    features['day_of_week'] = float(current_row['DAY'] % 7)
+    features['session_step'] = float(current_idx)
     
-    # Вычисляем массив всех исторических интервалов в переданном окне
-    if current_idx > 1:
-        intervals = history_df['DAY'].diff().dropna().values.astype(float)
-        intervals = cast(npt.NDArray[np.float64], intervals)
-    else:
-        intervals = np.array([], dtype=float)
+    features['current_weight'] = float(current_row['WEIGHT_GR'])
+    features['current_volume'] = float(current_row['VOLUME_ML'])
+    features['current_count'] = float(current_row['COUNT'])
+    
+    # Вычисляем массив всех исторических интервалов
+    intervals = history_df['DAY'].diff().dropna().values.astype(float)
+    intervals = cast(npt.NDArray[np.float64], intervals)
 
-    # 2. Лаговые признаки (WINDOW_SIZE)
-    for i in range(window_size):
+    # 2. Лаговые признаки (начинаем строго с прошлого шага)
+    for i in range(1, window_size + 1):
+        # Индекс для объемов (текущая - 1 - i)
         row_idx = current_idx - 1 - i
         
-        # Лаги объемов
         if row_idx >= 0:
-            features[f'weight_lag_{i}'] = history_df.iloc[row_idx]['WEIGHT_GR']
-            features[f'volume_lag_{i}'] = history_df.iloc[row_idx]['VOLUME_ML']
-            features[f'count_lag_{i}'] = history_df.iloc[row_idx]['COUNT']
+            features[f'weight_lag_{i}'] = float(history_df.iloc[row_idx]['WEIGHT_GR'])
+            features[f'volume_lag_{i}'] = float(history_df.iloc[row_idx]['VOLUME_ML'])
+            features[f'count_lag_{i}'] = float(history_df.iloc[row_idx]['COUNT'])
         else:
-            features[f'weight_lag_{i}'] = -1
-            features[f'volume_lag_{i}'] = -1
-            features[f'count_lag_{i}'] = -1
+            features[f'weight_lag_{i}'] = -1.0
+            features[f'volume_lag_{i}'] = -1.0
+            features[f'count_lag_{i}'] = -1.0
 
-        # Лаги интервалов (интервал_lag_1 = сколько дней прошло ПЕРЕД текущей покупкой)
-        interval_idx = len(intervals) - 1 - i
+        # Индекс для интервалов
+        interval_idx = len(intervals) - i
         if interval_idx >= 0:
-            features[f'interval_lag_{i+1}'] = intervals[interval_idx]
+            features[f'interval_lag_{i}'] = float(intervals[interval_idx])
         else:
-            features[f'interval_lag_{i+1}'] = -1
+            features[f'interval_lag_{i}'] = -1.0
 
-    # 3. Агрегации и скользящие средние (по всей доступной истории)
-    if len(intervals) > 0:
-        features['mean_interval'] = intervals.mean()
-        features['std_interval'] = intervals.std() if len(intervals) > 1 else -1.0
-        features['ema_interval'] = pd.Series(intervals).ewm(alpha=0.5, adjust=False).mean().iloc[-1]
-    else:
-        features['mean_interval'] = -1
-        features['std_interval'] = -1
-        features['ema_interval'] = -1
+    # 3. Агрегации и скользящие средние
+    features['mean_interval'] = float(intervals.mean())
+    features['std_interval'] = float(intervals.std()) if len(intervals) > 1 else -1.0
+    features['ema_interval'] = float(pd.Series(intervals).ewm(alpha=0.5, adjust=False).mean().iloc[-1])
 
-    features['mean_weight'] = history_df['WEIGHT_GR'].mean()
-    features['mean_volume'] = history_df['VOLUME_ML'].mean()
-    features['mean_count'] = history_df['COUNT'].mean()
+    features['mean_weight'] = float(history_df['WEIGHT_GR'].mean())
+    features['mean_volume'] = float(history_df['VOLUME_ML'].mean())
+    features['mean_count'] = float(history_df['COUNT'].mean())
 
     # 4. Взаимодействия и Бейзлайн
-    # Отношение текущей покупки к средней исторической
-    features['count_to_mean_ratio'] = features['count_lag_0'] / features['mean_count'] if features['mean_count'] > 0 else 1.0
-    features['weight_to_mean_ratio'] = features['weight_lag_0'] / features['mean_weight'] if features['mean_weight'] > 0 else 1.0
+    features['count_to_mean_ratio'] = features['current_count'] / features['mean_count'] if features['mean_count'] > 0 else 1.0
+    features['weight_to_mean_ratio'] = features['current_weight'] / features['mean_weight'] if features['mean_weight'] > 0 else 1.0
 
-    # Фича Бейзлайна: (Средний интервал / Среднее кол-во) * Текущее кол-во
-    if features['mean_count'] > 0 and features['mean_interval'] > 0:
-        features['baseline_pred_count'] = (features['mean_interval'] / features['mean_count']) * features['count_lag_0']
-    else:
-        features['baseline_pred_count'] = -1
+    # Фича Бейзлайна
+    features['baseline_pred_count'] = (features['mean_interval'] / features['mean_count']) * features['current_count']
 
     return features
