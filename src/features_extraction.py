@@ -14,8 +14,8 @@ def extract_features(history_df: pd.DataFrame, window_size: int = 3) -> dict[str
     
     # 1. Признаки текущего состояния
     current_row = history_df.iloc[-1]
-    features['day_of_week'] = float(current_row['DAY'] % 7)
-    features['session_step'] = float(current_idx)
+    features['day_of_week'] = int(current_row['DAY'] % 7)
+    features['session_step'] = int(current_idx)
     
     features['current_quantity'] = float(current_row['QUANTITY'])
     features['current_weight'] = float(current_row['WEIGHT_GR'])
