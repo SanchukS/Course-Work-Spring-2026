@@ -6,7 +6,7 @@ from src.features_extraction import extract_features
 def build_dataset_from_session(session_df: pd.DataFrame, window_size: int = 3) -> tuple[list[dict[str, float]], list[int]]:
     """
     Проходится по одной сессии пользователя и генерирует X и y.
-    session_df: DataFrame с колонками ['DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
+    session_df: DataFrame с колонками ['DAY', 'QUANTITY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
     """
     X_list = []
     y_list = []
@@ -28,7 +28,7 @@ def build_dataset_from_session(session_df: pd.DataFrame, window_size: int = 3) -
 def build_dataset(outflow_data: pd.DataFrame, window_size: int = 3) -> tuple[pd.DataFrame, pd.Series]:
     """
     Проходит по всем сессиям, генерирует по каждой из них X и y, объединяет в один датасет.
-    outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'household_key', 'SESSION_ID', 'DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
+    outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'household_key', 'SESSION_ID', 'DAY', 'QUANTITY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
     """
 
     grouped_sessions = outflow_data.groupby(["TOTAL CATEGORY", "household_key", "SESSION_ID"])
