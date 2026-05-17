@@ -28,10 +28,10 @@ def build_dataset_from_session(session_df: pd.DataFrame, window_size: int = 3) -
 def build_dataset(outflow_data: pd.DataFrame, window_size: int = 3) -> tuple[pd.DataFrame, pd.Series]:
     """
     Проходит по всем сессиям, генерирует по каждой из них X и y, объединяет в один датасет.
-    outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'SESSION_ID', 'DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
+    outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'household_key', 'SESSION_ID', 'DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
     """
 
-    grouped_sessions = outflow_data.groupby(["TOTAL CATEGORY", "SESSION_ID"])
+    grouped_sessions = outflow_data.groupby(["TOTAL CATEGORY", "household_key", "SESSION_ID"])
 
     X, y = [], []
 
