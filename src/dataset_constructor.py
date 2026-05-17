@@ -24,7 +24,7 @@ def build_dataset_from_session(session_df: pd.DataFrame, window_size: int = 3) -
     return X_list, y_list
 
 
-def build_dataset(outflow_data: pd.DataFrame, window_size: int = 3) -> tuple[np.ndarray, np.ndarray]:
+def build_dataset(outflow_data: pd.DataFrame, window_size: int = 3) -> tuple[pd.DataFrame, pd.Series]:
     """
     Проходит по всем сессиям, генерирует по каждой из них X и y, объединяет в один датасет.
     outflow_data: DataFrame с колонками ['TOTAL CATEGORY', 'SESSION_ID', 'DAY', 'WEIGHT_GR', 'VOLUME_ML', 'COUNT']
@@ -39,7 +39,7 @@ def build_dataset(outflow_data: pd.DataFrame, window_size: int = 3) -> tuple[np.
         X.extend(X_session)
         y.extend(y_session)
 
-    X_result = np.array(X)
-    y_result = np.array(y)
+    X_result = pd.DataFrame(X)
+    y_result = pd.Series(y)
 
     return X_result, y_result
