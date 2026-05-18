@@ -1,3 +1,9 @@
+Of course! That's a great addition to make the `README` even more informative for anyone looking at your project. I'll add a "Tech Stack" section.
+
+Here is the updated `README.md` with the new section integrated.
+
+---
+
 # Predicting Next Purchase Day: A Machine Learning Approach
 
 This repository contains the full codebase for the term paper titled *"Development and Research of Models for Predicting the Next Purchase Based on Transaction History"*.
@@ -14,6 +20,13 @@ The project follows a comprehensive data science pipeline, from raw data process
 *   **Advanced Feature Engineering**: A rich feature set of **52 predictors** was engineered for each transaction, including lag features, normalized lags, rolling statistics (mean, std, EMA), and heuristic-based projections.
 *   **Modeling**: Implementation and comparison of multiple baseline models against a powerful Gradient Boosting model (CatBoost).
 *   **Stratified Evaluation**: Model performance is rigorously evaluated using MAE (Mean Absolute Error) and MASE (Mean Absolute Scaled Error) metrics, calculated separately for **"Cold Start"** and **"Warm State"** scenarios.
+
+## Tech Stack
+
+*   **Language**: Python 3.13.7
+*   **Core Data Science Libraries**: Pandas, NumPy, Scikit-learn
+*   **Gradient Boosting**: CatBoost
+*   **Development Environment**: Jupyter Notebooks, VS Code
 
 ## Repository Structure
 
