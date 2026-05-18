@@ -19,9 +19,9 @@ def calculate_metrics(model: RegressorModel, X_test: pd.DataFrame, y_test: pd.Se
     warm_idx = ~cold_idx
     
     # 3. Маски для когорт по длине интервала
-    fast_idx = y_test <= 7
-    medium_idx = (y_test > 7) & (y_test <= 21)
-    long_idx = y_test > 21
+    fast_idx = fast_idx = X_test['mean_interval'] <= 7
+    long_idx = fast_idx = X_test['mean_interval'] > 21
+    medium_idx = (~fast_idx) & (~long_idx)
     
     # 4. Вспомогательная функция для расчета метрик по любому срезу
     def get_slice_metrics(mask, prefix: str) -> dict[str, float]:
