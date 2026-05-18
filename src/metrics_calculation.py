@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from typing import Protocol
+from src.regressor_model_abstract import RegressorModel
 
-class RegressorModel(Protocol):
-    def predict(self, X: pd.DataFrame | np.ndarray) -> np.ndarray: ...
 
 def calculate_metrics(model: RegressorModel, X_test: pd.DataFrame, y_test: pd.Series, window_size: int = 3) -> dict[str, float]:
     """
