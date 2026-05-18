@@ -8,3 +8,5 @@ __pycache__/
 
 # Игнорировать специфичные для ОС файлы
 .DS_Store
+
+catboost_info
