@@ -1,9 +1,3 @@
-Of course! That's a great addition to make the `README` even more informative for anyone looking at your project. I'll add a "Tech Stack" section.
-
-Here is the updated `README.md` with the new section integrated.
-
----
-
 # Predicting Next Purchase Day: A Machine Learning Approach
 
 This repository contains the full codebase for the term paper titled *"Development and Research of Models for Predicting the Next Purchase Based on Transaction History"*.
